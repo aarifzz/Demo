@@ -4,31 +4,36 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load data
-df = pd.read_csv("perishable_products_filled.csv")
+df = pd.read_csv("Book2.csv")
 df.columns = df.columns.str.strip() \
-                     .str.replace(r'[^a-zA-Z0-9 ]', '', regex=True) \
-                     .str.replace(' ', '_') \
-                     .str.replace(r'_+$', '', regex=True)
+                       .str.replace(r'[^a-zA-Z0-9 ]', '', regex=True) \
+                       .str.replace(' ', '_') \
+                       .str.replace(r'_+$', '', regex=True)
 
+# Convert Date column
 df["Date"] = pd.to_datetime(df["Date"], dayfirst=True)
 
+# Clean up any NaNs
+df = df.dropna(subset=["Product"])
+
+# Set page config
 st.set_page_config(page_title="Perishable Product Dashboard", layout="wide")
 st.title("📦 Perishable Products Dashboard")
 
 # KPIs
 col1, col2, col3 = st.columns(3)
-col1.metric("Total Revenue", f"{df['Revenue'].sum():,.0f}")
+col1.metric("Total Revenue", f"{df['total_selling_price'].sum():,.0f}")
 col2.metric("Total Profit", f"{df['Profit'].sum():,.0f}")
 col3.metric("Total Spoilage Loss", f"{df['Spoilage_Loss'].sum():,.0f}")
 
 # Product summary
 grouped = df.groupby("Product").agg({
     "Qty_Sold": "sum",
-    "Revenue": "sum",
+    "total_selling_price": "sum",
     "Profit": "sum",
     "Spoilage_Loss": "sum",
     "Profit_Margin": "mean"
-}).sort_values("Revenue", ascending=False)
+}).sort_values("total_selling_price", ascending=False)
 
 st.subheader("🔝 Top Selling Products")
 st.bar_chart(grouped["Qty_Sold"].head(10))
@@ -40,7 +45,7 @@ st.subheader("🗑️ Highest Spoilage Loss")
 st.bar_chart(grouped["Spoilage_Loss"].sort_values(ascending=False).head(10))
 
 # Daily trends
-daily = df.groupby("Date")[["Revenue", "Profit", "Spoilage_Loss"]].sum()
+daily = df.groupby("Date")[["total_selling_price", "Profit", "Spoilage_Loss"]].sum()
 st.subheader("📈 Daily Trends")
 st.line_chart(daily)
 
